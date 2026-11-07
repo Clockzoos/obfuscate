@@ -1,275 +1,216 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Review & Queue Panel - Entropy-Script</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
+    <title>Admin Script Moderation</title>
     <style>
-        .img-container { max-width: 100%; max-height: 300px; margin-bottom: 15px; display: none; }
-        .img-container img { max-width: 100%; display: block; }
-        .btn-crop { background-color: #222; color: #ffbb00; border: 1px solid #ffbb00; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px; display: none; width: 100%; }
-        #croppedPreview { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; display: none; border: 1px dashed #ffbb00; }
-        
-        /* Queue Section Styling */
-        .queue-section { margin-top: 40px; border-top: 2px dashed #333; padding-top: 20px; }
-        .queue-card { background: #161616; border: 1px solid #333; border-radius: 10px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; }
-        .queue-info { display: flex; align-items: center; gap: 15px; flex: 1; }
-        .queue-info img { width: 100px; height: 56px; object-fit: cover; border-radius: 6px; }
-        .queue-actions { display: flex; gap: 10px; }
-        .btn-approve { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-reject { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-approve:hover { background: #218838; }
-        .btn-reject:hover { background: #c82333; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h2 {
+            text-align: center;
+            color: #38bdf8;
+            margin-bottom: 5px;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+        .script-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .script-info h3 {
+            margin: 0 0 10px 0;
+            color: #f1f5f9;
+        }
+        .script-info p {
+            margin: 5px 0;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+        .script-link {
+            color: #38bdf8;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .script-link:hover {
+            text-decoration: underline;
+        }
+        .action-container {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-allow {
+            background-color: #10b981;
+            color: white;
+        }
+        .btn-allow:hover {
+            background-color: #059669;
+        }
+        .btn-deny {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-deny:hover {
+            background-color: #dc2626;
+        }
+        .no-data {
+            text-align: center;
+            color: #94a3b8;
+            margin-top: 50px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>REVIEW & ADMIN PANEL</h1>
-        <p>Upload new scripts to queue or review pending submissions before publishing.</p>
-    </header>
+    <div class="container">
+        <h2>Admin Script Moderation</h2>
+        <p class="subtitle">Review script yang masuk secara Private sebelum dipublikasikan</p>
 
-    <div class="admin-link">
-        <a href="index.html">← Back to Homepage</a>
-    </div>
-
-    <!-- UPLOAD FORM -->
-    <div class="admin-form-container">
-        <h2>Upload Script to Queue</h2>
-        <form id="uploadForm" onsubmit="submitToQueue(event)">
-            <div class="form-group">
-                <label>Script Title:</label>
-                <input type="text" id="scriptTitle" placeholder="e.g. Blox Fruits Auto Farm V3" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Thumbnail Image:</label>
-                <input type="file" id="imageInput" accept="image/*" style="padding: 10px; background: #0f0f0f; color: #fff; border: 1px solid #333; border-radius: 8px; width: 100%;">
-            </div>
-
-            <div class="img-container" id="cropperArea">
-                <img id="sourceImage" alt="Source">
-            </div>
-            <button type="button" class="btn-crop" id="cropBtn" onclick="performCrop()">Crop & Resize Image ✂️</button>
-
-            <img id="croppedPreview" alt="Cropped Preview">
-
-            <div class="form-group">
-                <label>Script Link:</label>
-                <input type="text" id="scriptLink" placeholder="https://pastebin.com/raw/..." required>
-            </div>
-
-            <button type="submit" class="btn-submit" id="submitBtn">Send to Review Queue 📥</button>
-        </form>
-    </div>
-
-    <!-- PENDING QUEUE SECTION -->
-    <div class="admin-form-container queue-section">
-        <h2>Pending Review Queue</h2>
-        <p style="color: #888; font-size: 14px; margin-bottom: 20px;">Scripts here are private and waiting for your approval.</p>
-        <div id="queueList">
-            <p style="color: #777;">Loading pending scripts...</p>
+        <!-- Tempat List Script -->
+        <div id="script-list">
+            <p class="no-data">Memuat data dari JSONbin...</p>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
-        // KREDENSIAL JSONBIN
+        // Konfigurasi Kredensial JSONBin dan Master Key
+        const QUEUE_BIN_ID = "6aef24a9ac6210605a7541d0"; // Bin khusus antrean private kamu
         const PUBLIC_BIN_ID = "6aef05abac6210605a74f72a"; // Bin utama untuk website publik (index.html)
-        const QUEUE_BIN_ID = "6aef24a9ac6210605a7541d0";  // Bin khusus antrean pending kamu
         const MASTER_KEY = "$2a$10$7kUozSyzkNytbUxnN7/kv.xInV14ItUgvNAWdjKEswZ0M.DDWgL/e";
 
-        let cropper;
-        let finalImageUrl = "";
-        const imageInput = document.getElementById('imageInput');
-        const sourceImage = document.getElementById('sourceImage');
-        const cropperArea = document.getElementById('cropperArea');
-        const cropBtn = document.getElementById('cropBtn');
-        const croppedPreview = document.getElementById('croppedPreview');
-
-        imageInput.addEventListener('change', function (e) {
-            let files = e.target.files;
-            if (files && files.length > 0) {
-                let file = files.item(0);
-                let reader = new FileReader();
-                reader.onload = function (event) {
-                    sourceImage.src = event.target.result;
-                    cropperArea.style.display = 'block';
-                    cropBtn.style.display = 'block';
-                    croppedPreview.style.display = 'none';
-
-                    if (cropper) { cropper.destroy(); }
-                    cropper = new Cropper(sourceImage, { aspectRatio: 16 / 9, viewMode: 1 });
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        function performCrop() {
-            if (cropper) {
-                let canvas = cropper.getCroppedCanvas({ width: 400, height: 225 });
-                finalImageUrl = canvas.toDataURL('image/jpeg', 0.6);
+        async function fetchScripts() {
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${QUEUE_BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': MASTER_KEY }
+                });
+                const data = await response.json();
                 
-                croppedPreview.src = finalImageUrl;
-                croppedPreview.style.display = 'block';
-                cropperArea.style.display = 'none';
-                cropBtn.style.display = 'none';
-                cropper.destroy();
-                alert('Image successfully cropped!');
+                // Mengambil data record dari JSONBin (berbentuk array langsung)
+                const scripts = data.record || []; 
+                
+                renderScripts(scripts);
+            } catch (error) {
+                console.error("Gagal memuat data:", error);
+                document.getElementById("script-list").innerHTML = `<p class="no-data">Gagal memuat data dari JSONbin. Periksa koneksi atau struktur JSON.</p>`;
             }
         }
 
-        // 1. KIRIM KE QUEUE (PENDING)
-        async function submitToQueue(event) {
-            event.preventDefault();
-            if (!finalImageUrl) {
-                alert('Please select and crop an image first!');
+        function renderScripts(scripts) {
+            const listContainer = document.getElementById("script-list");
+            listContainer.innerHTML = "";
+
+            if (!Array.isArray(scripts) || scripts.length === 0) {
+                listContainer.innerHTML = `<p class="no-data">Tidak ada script baru yang menunggu review. Aman! 🎉</p>`;
                 return;
             }
 
-            let title = document.getElementById('scriptTitle').value;
-            let link = document.getElementById('scriptLink').value;
-            let submitBtn = document.getElementById('submitBtn');
-
-            submitBtn.innerText = "Sending to Queue...";
-            submitBtn.disabled = true;
-
-            try {
-                let res = await fetch(`https://api.jsonbin.io/v3/b/${QUEUE_BIN_ID}/latest`, {
-                    headers: { 'X-Master-Key': MASTER_KEY }
-                });
-                let data = await res.json();
-                let queue = data.record || [];
-                if (!Array.isArray(queue)) queue = [];
-
-                queue.unshift({ title, image: finalImageUrl, link });
-
-                let putRes = await fetch(`https://api.jsonbin.io/v3/b/${QUEUE_BIN_ID}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY },
-                    body: JSON.stringify(queue)
-                });
-
-                if (putRes.ok) {
-                    alert('Script sent to review queue successfully!');
-                    location.reload();
-                } else {
-                    alert('Failed to send to queue.');
-                    submitBtn.innerText = "Send to Review Queue 📥";
-                    submitBtn.disabled = false;
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Error connecting to server.');
-                submitBtn.innerText = "Send to Review Queue 📥";
-                submitBtn.disabled = false;
-            }
+            scripts.forEach((script, index) => {
+                const card = document.createElement("div");
+                card.className = "script-card";
+                card.innerHTML = `
+                    <div class="script-info">
+                        <h3>${script.title || "Tanpa Judul"}</h3>
+                        <p><strong>Link Script:</strong> <a href="${script.link || script.url}" class="script-link" target="_blank">${script.link || script.url}</a></p>
+                        <p><strong>Status Saat Ini:</strong> <span style="color: #f59e0b;">Private (Menunggu Moderasi)</span></p>
+                    </div>
+                    <div class="action-container">
+                        <button class="btn-allow" onclick="moderateScript(${index}, 'public')">Izinkan (Public)</button>
+                        <button class="btn-deny" onclick="moderateScript(${index}, 'delete')">Tidak / Hapus</button>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
         }
 
-        // 2. LOAD PENDING QUEUE
-        async function loadQueue() {
-            let container = document.getElementById('queueList');
+        // Fungsi Tombol Aksi (Approve / Reject)
+        async function moderateScript(index, action) {
+            if(!confirm(`Apakah Anda yakin ingin ${action === 'public' ? 'mengizinkan dan mempublikasikan' : 'menghapus/menolak'} script ini?`)) return;
+
             try {
-                let res = await fetch(`https://api.jsonbin.io/v3/b/${QUEUE_BIN_ID}/latest`, {
+                // 1. Ambil data terbaru dari Queue Bin
+                let qRes = await fetch(`https://api.jsonbin.io/v3/b/${QUEUE_BIN_ID}/latest`, {
                     headers: { 'X-Master-Key': MASTER_KEY }
                 });
-                let data = await res.json();
-                let queue = data.record || [];
-
-                container.innerHTML = "";
-                if (!Array.isArray(queue) || queue.length === 0) {
-                    container.innerHTML = `<p style="color: #777;">No scripts waiting for review.</p>`;
-                    return;
-                }
-
-                queue.forEach((item, index) => {
-                    container.innerHTML += `
-                        <div class="queue-card">
-                            <div class="queue-info">
-                                <img src="${item.image}" alt="Thumb">
-                                <div>
-                                    <h4 style="color: #fff; margin-bottom: 5px;">${item.title}</h4>
-                                    <a href="${item.link}" target="_blank" style="color: #ffbb00; font-size: 12px; text-decoration: none;">View Link →</a>
-                                </div>
-                            </div>
-                            <div class="queue-actions">
-                                <button class="btn-approve" onclick="approveScript(${index})">✓ Approve</button>
-                                <button class="btn-reject" onclick="rejectScript(${index})">✕ Reject</button>
-                            </div>
-                        </div>
-                    `;
-                });
-            } catch (err) {
-                container.innerHTML = `<p style="color: #ff5555;">Failed to load queue.</p>`;
-            }
-        }
-
-        // 3. APPROVE SCRIPT (Pindah dari Queue ke Public)
-        async function approveScript(index) {
-            if (!confirm("Are you sure you want to publish this script to the live website?")) return;
-
-            try {
-                let qRes = await fetch(`https://api.jsonbin.io/v3/b/${QUEUE_BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } });
                 let qData = await qRes.json();
                 let queue = qData.record || [];
 
-                let approvedItem = queue.splice(index, 1)[0];
+                // Ambil data script yang dipilih berdasarkan urutan (index)
+                let targetScript = queue.splice(index, 1)[0]; 
 
-                let pRes = await fetch(`https://api.jsonbin.io/v3/b/${PUBLIC_BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } });
-                let pData = await pRes.json();
-                let publicScripts = pData.record || [];
-                if (!Array.isArray(publicScripts)) publicScripts = [];
+                if (action === 'public') {
+                    // 2A. Jika di-izinkan, masukkan ke Public Bin
+                    let pRes = await fetch(`https://api.jsonbin.io/v3/b/${PUBLIC_BIN_ID}/latest`, {
+                        headers: { 'X-Master-Key': MASTER_KEY }
+                    });
+                    let pData = await pRes.json();
+                    let publicScripts = pData.record || [];
+                    if (!Array.isArray(publicScripts)) publicScripts = [];
 
-                publicScripts.unshift(approvedItem);
+                    // Tambahkan ke urutan paling atas daftar publik
+                    publicScripts.unshift(targetScript);
 
-                await fetch(`https://api.jsonbin.io/v3/b/${PUBLIC_BIN_ID}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY },
-                    body: JSON.stringify(publicScripts)
-                });
+                    // Update Public Bin di server
+                    await fetch(`https://api.jsonbin.io/v3/b/${PUBLIC_BIN_ID}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': MASTER_KEY
+                        },
+                        body: JSON.stringify(publicScripts)
+                    });
+                }
 
+                // 2B. Hapus data dari Queue Bin (baik di-approve maupun di-reject)
                 await fetch(`https://api.jsonbin.io/v3/b/${QUEUE_BIN_ID}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': MASTER_KEY
+                    },
                     body: JSON.stringify(queue)
                 });
 
-                alert('Script successfully approved and published live!');
-                loadQueue();
-            } catch (err) {
-                console.error(err);
-                alert('Failed to approve script.');
+                alert(action === 'public' ? 'Script berhasil disetujui dan dipublikasikan ke web utama! 🚀' : 'Script berhasil dihapus/ditolak.');
+                
+                // Muat ulang daftar antrean
+                fetchScripts();
+
+            } catch (error) {
+                console.error("Gagal memproses moderasi:", error);
+                alert('Terjadi kesalahan saat memproses data.');
             }
         }
 
-        // 4. REJECT SCRIPT (Hapus dari Queue)
-        async function rejectScript(index) {
-            if (!confirm("Are you sure you want to reject and delete this script?")) return;
-
-            try {
-                let res = await fetch(`https://api.jsonbin.io/v3/b/${QUEUE_BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } });
-                let data = await res.json();
-                let queue = data.record || [];
-
-                queue.splice(index, 1);
-
-                await fetch(`https://api.jsonbin.io/v3/b/${QUEUE_BIN_ID}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY },
-                    body: JSON.stringify(queue)
-                });
-
-                alert('Script rejected and deleted.');
-                loadQueue();
-            } catch (err) {
-                console.error(err);
-                alert('Failed to reject script.');
-            }
-        }
-
-        window.onload = loadQueue;
+        // Jalankan saat halaman dibuka
+        fetchScripts();
     </script>
+
 </body>
 </html>
