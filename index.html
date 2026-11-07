@@ -33,6 +33,7 @@
             padding: 20px;
             margin-bottom: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
         }
         .script-info h3 {
             margin: 0 0 10px 0;
@@ -100,7 +101,6 @@
     </div>
 
     <script>
-        // Konfigurasi Kredensial JSONBin dan Master Key
         const QUEUE_BIN_ID = "6aef24a9ac6210605a7541d0"; // Bin khusus antrean private kamu
         const PUBLIC_BIN_ID = "6aef05abac6210605a74f72a"; // Bin utama untuk website publik (index.html)
         const MASTER_KEY = "$2a$10$7kUozSyzkNytbUxnN7/kv.xInV14ItUgvNAWdjKEswZ0M.DDWgL/e";
@@ -111,8 +111,6 @@
                     headers: { 'X-Master-Key': MASTER_KEY }
                 });
                 const data = await response.json();
-                
-                // Mengambil data record dari JSONBin (berbentuk array langsung)
                 const scripts = data.record || []; 
                 
                 renderScripts(scripts);
@@ -134,6 +132,8 @@
             scripts.forEach((script, index) => {
                 const card = document.createElement("div");
                 card.className = "script-card";
+                // Berikan id unik pada card agar gampang dihapus secara instan
+                card.id = `script-card-${index}`;
                 card.innerHTML = `
                     <div class="script-info">
                         <h3>${script.title || "Tanpa Judul"}</h3>
@@ -149,7 +149,7 @@
             });
         }
 
-        // Fungsi Tombol Aksi (Approve / Reject)
+        // Fungsi Tombol Aksi dengan Animasi Hapus Instan (Tanpa Refresh)
         async function moderateScript(index, action) {
             if(!confirm(`Apakah Anda yakin ingin ${action === 'public' ? 'mengizinkan dan mempublikasikan' : 'menghapus/menolak'} script ini?`)) return;
 
@@ -161,7 +161,6 @@
                 let qData = await qRes.json();
                 let queue = qData.record || [];
 
-                // Ambil data script yang dipilih berdasarkan urutan (index)
                 let targetScript = queue.splice(index, 1)[0]; 
 
                 if (action === 'public') {
@@ -173,10 +172,8 @@
                     let publicScripts = pData.record || [];
                     if (!Array.isArray(publicScripts)) publicScripts = [];
 
-                    // Tambahkan ke urutan paling atas daftar publik
                     publicScripts.unshift(targetScript);
 
-                    // Update Public Bin di server
                     await fetch(`https://api.jsonbin.io/v3/b/${PUBLIC_BIN_ID}`, {
                         method: 'PUT',
                         headers: {
@@ -187,7 +184,7 @@
                     });
                 }
 
-                // 2B. Hapus data dari Queue Bin (baik di-approve maupun di-reject)
+                // 2B. Update Queue Bin di server (hapus item yang sudah diproses)
                 await fetch(`https://api.jsonbin.io/v3/b/${QUEUE_BIN_ID}`, {
                     method: 'PUT',
                     headers: {
@@ -197,10 +194,22 @@
                     body: JSON.stringify(queue)
                 });
 
-                alert(action === 'public' ? 'Script berhasil disetujui dan dipublikasikan ke web utama! 🚀' : 'Script berhasil dihapus/ditolak.');
-                
-                // Muat ulang daftar antrean
-                fetchScripts();
+                // --- FITUR HAPUS CARD LANGSUNG DARI LAYAR TANPA REFRESH ---
+                const cardElement = document.getElementById(`script-card-${index}`);
+                if (cardElement) {
+                    cardElement.style.opacity = '0';
+                    cardElement.style.transform = 'scale(0.9)';
+                    setTimeout(() => {
+                        cardElement.remove();
+                        // Jika antrean kosong setelah dihapus, tampilkan teks kosong
+                        if (queue.length === 0) {
+                            document.getElementById("script-list").innerHTML = `<p class="no-data">Tidak ada script baru yang menunggu review. Aman! 🎉</p>`;
+                        }
+                    }, 300);
+                }
+
+                // Opsional: Perbarui indeks ulang atau panggil fetchScripts di background secara senyap
+                setTimeout(fetchScripts, 400);
 
             } catch (error) {
                 console.error("Gagal memproses moderasi:", error);
