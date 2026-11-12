@@ -14,7 +14,10 @@
  -webkit-touch-callout:none;
 }
 body{margin:0;background:#151515;color:white;font-family:Arial;overflow:hidden}
-canvas{display:block;width:100vw;height:100dvh;background:#496b37}
+
+/* Memaksa canvas mengisi seluruh layar secara landscape */
+canvas{display:block;width:100vw;height:100vh;background:#496b37}
+
 #hud{position:absolute;top:8px;left:8px;right:8px;pointer-events:none}
 .panel{background:#111d;border:2px solid #777;border-radius:9px;padding:8px;margin-bottom:5px;width:max-content;max-width:100%}
 button{background:#252525;color:white;border:2px solid #aaa;border-radius:9px;padding:10px;font-weight:bold;font-size:14px;cursor:pointer}
@@ -34,6 +37,23 @@ button:active{background:#666}
 .hidden{display:none!important}
 .bar{height:9px;background:#444;border-radius:8px;overflow:hidden;margin-top:4px}
 .fill{height:100%;background:#42d65c;width:100%}
+
+/* Peringatan Putar Layar (Landscape Warning) */
+#rotateWarning {
+ position: fixed;
+ inset: 0;
+ background: #111;
+ color: #ffcc33;
+ z-index: 9999;
+ display: none;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ text-align: center;
+ padding: 20px;
+ font-size: 18px;
+ font-weight: bold;
+}
 
 #customToast{
  position:absolute;
@@ -105,6 +125,13 @@ button:active{background:#666}
 </style>
 </head>
 <body>
+
+<!-- Peringatan jika HP masih berdiri -->
+<div id="rotateWarning">
+ <div style="font-size: 50px; margin-bottom: 15px;">📱🔄</div>
+ <p>Mohon putar HP kamu ke posisi Landscape (Mendatar) untuk pengalaman bermain seperti Roblox!</p>
+</div>
+
 <canvas id="game"></canvas>
 <div id="customToast">Notifikasi</div>
 <div id="epicBanner">🌟 EPIC LEVEL UP! 🌟</div>
@@ -169,32 +196,58 @@ const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
 function resize(){
- canvas.width=innerWidth;
- canvas.height=innerHeight;
+ canvas.width=window.innerWidth;
+ canvas.height=window.innerHeight;
+ 
+ // Deteksi apakah posisi HP masih Portrait (Tegak)
+ let warningDiv = document.getElementById("rotateWarning");
+ if(window.innerHeight > window.innerWidth){
+  warningDiv.style.display = "flex";
+ } else {
+  warningDiv.style.display = "none";
+ }
 }
 resize();
-addEventListener("resize",resize);
+window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", resize);
 
-// Konfigurasi JSONBin.io Anda
 const BIN_ID = "6af5e58eac6210605a82e3d0";
 const MASTER_KEY = "$2a$10$7kUozSyzkNytbUxnN7/kv.xInV14ItUgvNAWdjKEswZ0M.DDWgL/e";
 
 let playerName = localStorage.getItem("zombiePlayerName") || "";
-let money=0, level=1, xp=0, damage=15, maxHp=100, weapon="Pistol", owned=["Pistol"];
-let nameChangeTickets = 0;
-let best=0, leaderboardData=[];
 
-let zombieRadarLevel = 0;
-let chestRadarLevel = 0;
+let savedGame = {};
+try {
+ savedGame = JSON.parse(localStorage.getItem("zombieUltimateSave") || "{}");
+} catch(e) {}
+
+let money = savedGame.money || 0;
+let level = savedGame.level || 1;
+let xp = savedGame.xp || 0;
+let damage = savedGame.damage || 15;
+let maxHp = savedGame.maxHp || 100;
+let weapon = savedGame.weapon || "Pistol";
+let owned = savedGame.owned || ["Pistol"];
+let zombieRadarLevel = savedGame.zombieRadarLevel || 0;
+let chestRadarLevel = savedGame.chestRadarLevel || 0;
+let nameChangeTickets = savedGame.nameChangeTickets || 0;
+
+let leaderboardData=[];
 let apocalypseActive = false;
 let apocalypseTimer = 0;
 
-let player={x:0,y:0,hp:100,speed:3.5,anim:0,isMoving:false,facing:1};
+let player={x:0,y:0,hp:maxHp,speed:3.5,anim:0,isMoving:false,facing:1};
 let zombies=[], bullets=[], particles=[], chests=[], keys={};
 let running=false,paused=false,gameOver=false;
 let score=0,spawnTimer=0,chestTimer=0,fireTimer=0;
 let firing=false, shootAnimTimer=0, chestAnimTimer=0;
 let cam={x:0,y:0};
+
+function saveGameLocal(){
+ localStorage.setItem("zombieUltimateSave", JSON.stringify({
+  money, level, xp, damage, maxHp, weapon, owned, zombieRadarLevel, chestRadarLevel, nameChangeTickets
+ }));
+}
 
 async function fetchLeaderboard() {
  try {
@@ -210,36 +263,33 @@ async function fetchLeaderboard() {
 fetchLeaderboard();
 
 async function saveLeaderboardOnline() {
- // Update atau masukkan data pemain berdasarkan level tertinggi
+ if(!playerName) return;
+ try {
+  let response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+   headers: { "X-Master-Key": MASTER_KEY }
+  });
+  let data = await response.json();
+  leaderboardData = data.record.leaderboard || [];
+ } catch(e){}
+
  let existingIndex = leaderboardData.findIndex(item => item.name === playerName);
- 
- let playerData = {
-  name: playerName || "Anonymous",
-  level: level,
-  money: money,
-  damage: damage
- };
+ let playerData = { name: playerName, level: level, money: money, damage: damage };
 
  if(existingIndex >= 0){
-  // Jika level player baru lebih tinggi dari data lama di leaderboard, update
-  if(level > (leaderboardData[existingIndex].level || 1)){
+  if(level >= (leaderboardData[existingIndex].level || 1)){
    leaderboardData[existingIndex] = playerData;
   }
  } else {
   leaderboardData.push(playerData);
  }
 
- // Urutkan berdasarkan LEVEL tertinggi
  leaderboardData.sort((a,b) => (b.level || 1) - (a.level || 1));
  if(leaderboardData.length > 5) leaderboardData = leaderboardData.slice(0, 5);
 
  try {
   await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
    method: "PUT",
-   headers: {
-    "Content-Type": "application/json",
-    "X-Master-Key": MASTER_KEY
-   },
+   headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY },
    body: JSON.stringify({ leaderboard: leaderboardData })
   });
  } catch(e) {
@@ -312,23 +362,21 @@ function handleStartGame(){
 }
 
 function startGame(){
- money=0; level=1; xp=0; damage=15; maxHp=100; weapon="Pistol"; owned=["Pistol"];
- zombieRadarLevel=0; chestRadarLevel=0; nameChangeTickets=0;
-
  document.getElementById("overlay").classList.add("hidden");
- player.x=0;player.y=0;player.hp=maxHp;
- zombies=[];bullets=[];particles=[];chests=[];
- score=0;spawnTimer=0;chestTimer=0;
+ player.x=0; player.y=0; player.hp=maxHp;
+ zombies=[]; bullets=[]; particles=[]; chests=[];
+ score=0; spawnTimer=0; chestTimer=0;
  apocalypseActive=false; apocalypseTimer=0;
- running=true;paused=false;gameOver=false;
+ running=true; paused=false; gameOver=false;
  ui();
 }
 
-function pauseGame(){
+async function pauseGame(){
  if(!running||gameOver)return;
  paused=!paused;
  let overlay=document.getElementById("overlay");
  if(paused){
+  await fetchLeaderboard();
   let btnContainer=document.getElementById("overlayBox");
   let lbHtml = "<h3>🏆 LEVEL LEADERBOARD</h3>";
   
@@ -354,7 +402,15 @@ function pauseGame(){
    ${lbHtml}
    <button onclick="resumeGame()" style="width:100%;margin-top:10px;">▶ LANJUT</button>
    <button onclick="openNameChangeModal()" style="width:100%;margin-top:5px;background:#334455;">🎫 Ganti Nama (${nameChangeTickets} Tiket)</button>
-   <button onclick="location.reload()" style="width:100%;margin-top:5px;background:#a21d1d;">🔄 KELUAR KE MENU</button>
+   
+   <div style="margin-top:8px; padding:8px; background:#1b2631; border-radius:8px; font-size:12px; text-align:center; border:1px solid #4a6572;">
+    <b>✨ CREDITS ✨</b><br>
+    Idea Creator / Dev 1: <span style="color:#ffcc33;">Ihsan</span><br>
+    Developer: <span style="color:#ffcc33;">Clockzoos</span><br>
+    Co-Dev / Mystery: <span style="color:#00ffff;">???</span>
+   </div>
+
+   <button onclick="location.reload()" style="width:100%;margin-top:8px;background:#a21d1d;">🔄 KELUAR KE MENU</button>
   `;
   overlay.classList.remove("hidden");
  } else {
@@ -387,13 +443,16 @@ function openNameChangeModal(){
   nameChangeTickets--;
   localStorage.setItem("zombiePlayerName", playerName);
   showToast("Berhasil mengganti nama!");
+  saveGameLocal();
   resumeGame();
  }
 }
 
 function endGame(){
- running=false;gameOver=true;
+ running=false; gameOver=true;
  saveLeaderboardOnline();
+ localStorage.removeItem("zombieUltimateSave");
+
  let overlay=document.getElementById("overlay");
  overlay.classList.remove("hidden");
  document.getElementById("overlayBox").innerHTML = `
@@ -475,6 +534,8 @@ function buyWeapon(name,cost,basePower){
  damage = basePower;
  sound(700);
  showToast(`Berhasil membeli ${name}!`);
+ saveGameLocal();
+ saveLeaderboardOnline();
  ui(); updateShopItems();
 }
 
@@ -484,6 +545,7 @@ function buyNameTicket(){
  nameChangeTickets++;
  sound(900);
  showToast("Berhasil membeli Tiket Ganti Nama!");
+ saveGameLocal();
  ui(); updateShopItems();
 }
 
@@ -493,6 +555,8 @@ function upgradeDamage(cost){
  damage += 5;
  sound(650);
  showToast("Damage berhasil di-upgrade (+5)!");
+ saveGameLocal();
+ saveLeaderboardOnline();
  ui(); updateShopItems();
 }
 
@@ -501,6 +565,7 @@ function upgradeHealth(cost){
  money-=cost; maxHp+=25; player.hp=maxHp;
  sound(550);
  showToast("Health maksimal bertambah (+25)!");
+ saveGameLocal();
  ui(); updateShopItems();
 }
 
@@ -512,6 +577,7 @@ function upgradeZombieRadar(){
  zombieRadarLevel++;
  sound(800);
  showToast(`Zombie Radar naik ke Level ${zombieRadarLevel}!`);
+ saveGameLocal();
  ui(); updateShopItems();
 }
 
@@ -523,6 +589,7 @@ function upgradeChestRadar(){
  chestRadarLevel++;
  sound(850);
  showToast(`Peti Radar naik ke Level ${chestRadarLevel}!`);
+ saveGameLocal();
  ui(); updateShopItems();
 }
 
@@ -533,6 +600,9 @@ function gainXP(amount){
   level++;
   damage += 2;
   
+  saveGameLocal();
+  saveLeaderboardOnline();
+  
   if(level % 10 === 0){
    sound(950,.4,"triangle");
    showEpicBanner(`🔥 SELAMAT! REACHED LEVEL ${level} 🔥`);
@@ -541,6 +611,7 @@ function gainXP(amount){
    showToast(`🎉 NAIK LEVEL ${level}! Zombie semakin kuat!`);
   }
  }
+ saveGameLocal();
  ui();
 }
 
@@ -694,7 +765,7 @@ function drawWorld(){
  let sy=((-cam.y)%size+size)%size;
  ctx.strokeStyle="#ffffff12"; ctx.lineWidth=1;
  for(let x=sx;x<canvas.width;x+=size){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke(); }
- for(let y=sy;y<canvas.height;y+=size){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke(); }
+ for(let y=sy;y<canvas.height;y+=size){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke(); }
 }
 
 function updateRadars(){
@@ -787,6 +858,7 @@ function loop(){
     else { damage += c.rewardAmount; showToast(`🎁 Peti: +${c.rewardAmount} Bonus Damage!`); }
     sound(900,.15,"triangle");
    }
+   saveGameLocal();
    chests.splice(index, 1); ui();
   }
  });
@@ -872,8 +944,8 @@ addEventListener("keyup",e=>{
  let k=e.key.toLowerCase();
  if(k==="w"||k==="arrowup")keys.up=false;
  if(k==="s"||k==="arrowdown")keys.down=false;
- if(k==="a"||k==="arrowleft")keys.left=false;
- if(k==="d"||k==="arrowright")keys.right=false;
+ if(k==="a"||k===arrowleft")keys.left=false;
+ if(k==="d"||k===arrowright")keys.right=false;
  if(k===" ")firing=false;
 });
 
