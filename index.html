@@ -14,10 +14,7 @@
  -webkit-touch-callout:none;
 }
 body{margin:0;background:#151515;color:white;font-family:Arial;overflow:hidden}
-
-/* Memaksa canvas mengisi seluruh layar secara landscape */
 canvas{display:block;width:100vw;height:100vh;background:#496b37}
-
 #hud{position:absolute;top:8px;left:8px;right:8px;pointer-events:none}
 .panel{background:#111d;border:2px solid #777;border-radius:9px;padding:8px;margin-bottom:5px;width:max-content;max-width:100%}
 button{background:#252525;color:white;border:2px solid #aaa;border-radius:9px;padding:10px;font-weight:bold;font-size:14px;cursor:pointer}
@@ -38,7 +35,6 @@ button:active{background:#666}
 .bar{height:9px;background:#444;border-radius:8px;overflow:hidden;margin-top:4px}
 .fill{height:100%;background:#42d65c;width:100%}
 
-/* Peringatan Putar Layar (Landscape Warning) */
 #rotateWarning {
  position: fixed;
  inset: 0;
@@ -126,10 +122,9 @@ button:active{background:#666}
 </head>
 <body>
 
-<!-- Peringatan jika HP masih berdiri -->
 <div id="rotateWarning">
  <div style="font-size: 50px; margin-bottom: 15px;">📱🔄</div>
- <p>Mohon putar HP kamu ke posisi Landscape (Mendatar) untuk pengalaman bermain seperti Roblox!</p>
+ <p>Mohon putar HP kamu ke posisi Landscape (Mendatar) untuk bermain!</p>
 </div>
 
 <canvas id="game"></canvas>
@@ -198,8 +193,6 @@ const ctx=canvas.getContext("2d");
 function resize(){
  canvas.width=window.innerWidth;
  canvas.height=window.innerHeight;
- 
- // Deteksi apakah posisi HP masih Portrait (Tegak)
  let warningDiv = document.getElementById("rotateWarning");
  if(window.innerHeight > window.innerWidth){
   warningDiv.style.display = "flex";
@@ -352,9 +345,14 @@ function sound(freq=300,duration=.1,type="square"){
 }
 
 function handleStartGame(){
- let inputName = document.getElementById("usernameInput").value.trim();
+ let inputElem = document.getElementById("usernameInput");
+ let inputName = inputElem ? inputElem.value.trim() : "";
+ 
  if(!playerName){
-  if(!inputName){ showToast("Masukkan username terlebih dahulu!", true); return; }
+  if(!inputName){ 
+   showToast("Masukkan username terlebih dahulu!", true); 
+   return; 
+  }
   playerName = inputName;
   localStorage.setItem("zombiePlayerName", playerName);
  }
@@ -944,8 +942,8 @@ addEventListener("keyup",e=>{
  let k=e.key.toLowerCase();
  if(k==="w"||k==="arrowup")keys.up=false;
  if(k==="s"||k==="arrowdown")keys.down=false;
- if(k==="a"||k===arrowleft")keys.left=false;
- if(k==="d"||k===arrowright")keys.right=false;
+ if(k==="a"||k==="arrowleft")keys.left=false;
+ if(k==="d"||k==="arrowright")keys.right=false;
  if(k===" ")firing=false;
 });
 
