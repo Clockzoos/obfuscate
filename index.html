@@ -1,158 +1,143 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lua Obfuscator Online</title>
+    <title>Roblox Tool - Custom Backend</title>
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --border-color: #334155;
-            --text-color: #f8fafc;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
             margin: 0;
             padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         .container {
-            max-width: 900px;
-            margin: 40px auto;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        h1 { font-size: 24px; margin-bottom: 8px; }
-        p.desc { color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        @media (max-width: 768px) {
-            .grid { grid-template-columns: 1fr; }
-        }
-        .box { display: flex; flex-direction: column; }
-        label { font-weight: 600; margin-bottom: 8px; font-size: 14px; }
-        textarea {
-            width: 100%;
-            height: 250px;
-            background: #0f172a;
-            color: #f8fafc;
-            border: 1px solid var(--border-color);
-            padding: 12px;
+            background: #1e1e1e;
+            padding: 20px;
             border-radius: 8px;
-            font-family: monospace;
-            resize: vertical;
-            box-sizing: border-box;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        textarea:focus, button:focus {
-            outline: 2px solid var(--primary);
+        h2 {
+            text-align: center;
+            color: #00ffcc;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
         }
         button {
-            background-color: var(--primary);
-            color: white;
+            width: 100%;
+            padding: 10px;
+            background: #00ffcc;
+            color: #000;
             border: none;
-            padding: 12px 20px;
-            font-size: 14px;
-            font-weight: 600;
+            border-radius: 4px;
+            font-weight: bold;
             cursor: pointer;
-            border-radius: 8px;
-            margin-top: 16px;
-            transition: background 0.2s;
+            margin-top: 10px;
         }
         button:hover {
-            background-color: var(--primary-hover);
+            background: #00b386;
         }
-        .actions {
-            grid-column: 1 / -1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .options {
-            display: flex;
-            gap: 15px;
-            font-size: 14px;
-            color: #94a3b8;
+        #result {
+            margin-top: 15px;
+            padding: 10px;
+            background: #2d2d2d;
+            border-radius: 4px;
+            font-size: 13px;
+            word-break: break-all;
+            white-space: pre-wrap;
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Lua Obfuscator Simple</h1>
-        <p class="desc">Lindungi kode skrip Lua atau Roblox Luau kamu langsung di browser.</p>
-        
-        <div class="grid">
-            <!-- Kolom Input -->
-            <div class="box">
-                <label for="inputCode">Kode Lua Asli:</label>
-                <textarea id="inputCode" placeholder="-- Tulis atau tempel kode Lua di sini...&#10;local pesan = 'Halo Dunia'&#10;print(pesan)"></textarea>
-            </div>
-
-            <!-- Kolom Output -->
-            <div class="box">
-                <label for="outputCode">Hasil Obfuscate:</label>
-                <textarea id="outputCode" readonly placeholder="Hasil obfuscation akan muncul di sini..."></textarea>
-            </div>
-
-            <!-- Bagian Tombol & Pengaturan -->
-            <div class="actions">
-                <div class="options">
-                    <label><input type="checkbox" id="removeComments" checked> Hapus Komentar</label>
-                    <label><input type="checkbox" id="minifyCode" checked> Minifikasi Spasi</label>
-                </div>
-                <button onclick="processObfuscate()">Mulai Obfuscate</button>
-            </div>
-        </div>
+<div class="container">
+    <h2>Roblox Publisher Tool</h2>
+    
+    <div class="form-group">
+        <label for="cookie">.ROBLOSECURITY Cookie:</label>
+        <textarea id="cookie" rows="3" placeholder="Masukkan cookie akun Roblox lu di sini..."></textarea>
     </div>
 
-    <script>
-        function processObfuscate() {
-            let code = document.getElementById('inputCode').value;
-            const removeComments = document.getElementById('removeComments').checked;
-            const minifyCode = document.getElementById('minifyCode').checked;
+    <div class="form-group">
+        <label for="universeId">Universe ID (Opsional, khusus untuk Create Place):</label>
+        <input type="text" id="universeId" placeholder="Contoh: 12345678">
+    </div>
 
-            if (!code.trim()) {
-                alert("Masukkan kode Lua terlebih dahulu!");
-                return;
-            }
+    <button onclick="sendRequest('createUniverse')">Create Universe</button>
+    <button onclick="sendRequest('createPlace')" style="background: #ff9900;">Create Place</button>
 
-            // 1. Logika Hapus Komentar (-- komentar)
-            if (removeComments) {
-                code = code.replace(/--\[\[[\s\S]*?--\]\]/g, '') // Hapus komentar blok
-                           .replace(/--.*$/gm, '');              // Hapus komentar baris
-            }
+    <div id="result"></div>
+</div>
 
-            // 2. Logika Sederhana Penggantian String Menjadi byte string.char(...)
-            // Mengubah teks dalam tanda kutip menjadi string.char agar tidak terbaca langsung
-            code = code.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'/g, function(match, p1) {
-                let bytes = [];
-                for (let i = 0; i < p1.length; i++) {
-                    bytes.push(p1.charCodeAt(i));
-                }
-                return 'string.char(' + bytes.join(', ') + ')';
+<script>
+    // URL Vercel Worker lu yang aktif
+    const WORKER_URL = "https://worker-virid.vercel.app/api";
+
+    async function sendRequest(action) {
+        const cookie = document.getElementById('cookie').value.trim();
+        const universeId = document.getElementById('universeId').value.trim();
+        const resultDiv = document.getElementById('result');
+
+        if (!cookie) {
+            alert("Cookie Roblox wajib diisi!");
+            return;
+        }
+
+        resultDiv.style.display = "block";
+        resultDiv.style.color = "#ffff00";
+        resultDiv.innerText = "Sedang memproses...";
+
+        try {
+            const response = await fetch(WORKER_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    action: action,
+                    cookie: cookie,
+                    universeId: universeId
+                })
             });
 
-            // 3. Logika Minifikasi (Menghapus spasi berlebih & baris baru jika diaktifkan)
-            if (minifyCode) {
-                code = code
-                    .replace(/\r?\n|\r/g, ' ') // Ganti baris baru jadi spasi
-                    .replace(/\s+/g, ' ')      // Gabungkan spasi ganda
-                    .trim();
-            }
+            const data = await response.json();
 
-            // Tampilkan hasil ke textarea output
-            document.getElementById('outputCode').value = code;
+            if (data.ok) {
+                resultDiv.style.color = "#00ffcc";
+                resultDiv.innerText = "SUKSES:\n" + data.message;
+            } else {
+                resultDiv.style.color = "#ff4444";
+                resultDiv.innerText = "GAGAL:\n" + data.message;
+            }
+        } catch (err) {
+            resultDiv.style.color = "#ff4444";
+            resultDiv.innerText = "ERROR KONEKSI: " + err.message;
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
