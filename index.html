@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Zombie Survival Ultimate - Landscape</title>
+<title>Zombie Survival Ultimate</title>
 <style>
 *{
  box-sizing:border-box;
@@ -15,11 +15,16 @@
 }
 body{margin:0;background:#151515;color:white;font-family:Arial;overflow:hidden}
 canvas{display:block;width:100vw;height:100vh;background:#496b37}
-#hud{position:absolute;top:8px;left:8px;right:8px;pointer-events:none}
-.panel{background:#111d;border:2px solid #777;border-radius:9px;padding:8px;margin-bottom:5px;width:max-content;max-width:100%}
-button{background:#252525;color:white;border:2px solid #aaa;border-radius:9px;padding:10px;font-weight:bold;font-size:14px;cursor:pointer}
+
+/* Layout HUD di pojok kiri atas & tombol di kanan atas */
+#hud{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+.panel{background:#111d;border:2px solid #777;border-radius:9px;padding:8px;width:max-content;max-width:65%}
+button{background:#252525;color:white;border:2px solid #aaa;border-radius:9px;padding:10px 14px;font-weight:bold;font-size:14px;cursor:pointer}
 button:active{background:#666}
-#top{display:flex;justify-content:space-between;align-items:flex-start}
+
+/* Kontainer tombol kanan atas (Shop & Pause bertumpuk rapi) */
+#rightButtons{display:flex;flex-direction:column;gap:6px;pointer-events:auto;}
+
 #controls{position:absolute;bottom:15px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:end}
 #move{display:grid;grid-template-columns:48px 48px 48px;gap:4px}
 #move button{height:45px;padding:0;font-size:20px}
@@ -35,25 +40,9 @@ button:active{background:#666}
 .bar{height:9px;background:#444;border-radius:8px;overflow:hidden;margin-top:4px}
 .fill{height:100%;background:#42d65c;width:100%}
 
-#rotateWarning {
- position: fixed;
- inset: 0;
- background: #111;
- color: #ffcc33;
- z-index: 9999;
- display: none;
- flex-direction: column;
- align-items: center;
- justify-content: center;
- text-align: center;
- padding: 20px;
- font-size: 18px;
- font-weight: bold;
-}
-
 #customToast{
  position:absolute;
- top:15%;
+ top:20%;
  left:50%;
  transform:translate(-50%,-50%) scale(0.8);
  background:rgba(20, 20, 20, 0.95);
@@ -101,8 +90,8 @@ button:active{background:#666}
 
 #radarPanel{
  position:absolute;
- top:8px;
- right:115px;
+ top:115px;
+ left:8px;
  background:#111d;
  border:2px solid #777;
  border-radius:9px;
@@ -122,11 +111,6 @@ button:active{background:#666}
 </head>
 <body>
 
-<div id="rotateWarning">
- <div style="font-size: 50px; margin-bottom: 15px;">📱🔄</div>
- <p>Mohon putar HP kamu ke posisi Landscape (Mendatar) untuk bermain!</p>
-</div>
-
 <canvas id="game"></canvas>
 <div id="customToast">Notifikasi</div>
 <div id="epicBanner">🌟 EPIC LEVEL UP! 🌟</div>
@@ -138,19 +122,18 @@ button:active{background:#666}
 </div>
 
 <div id="hud">
- <div id="top">
   <div class="panel">
    <b>🧟 ZOMBIE SURVIVAL</b> [<span id="playerNameDisplay">Player</span>]<br>
    Level: <span id="level">1</span> / 1000 | XP: <span id="xp">0</span>
-   <div class="bar" style="width:160px"><div id="xpbar" class="fill"></div></div>
+   <div class="bar" style="width:140px"><div id="xpbar" class="fill"></div></div>
    ❤️ <span id="hp">100</span> | 💰 $<span id="money">0</span><br>
-   🔫 <span id="weapon">Pistol</span> | Damage: <span id="damage">15</span>
+   🔫 <span id="weapon">Pistol</span> | Dmg: <span id="damage">15</span>
   </div>
-  <div style="pointer-events: auto;">
+  <!-- Tombol Shop di atas, Pause di bawahnya di kanan atas -->
+  <div id="rightButtons">
    <button onclick="openShop()">🛒 SHOP</button>
-   <button onclick="pauseGame()">Ⅱ</button>
+   <button onclick="pauseGame()">Ⅱ PAUSE</button>
   </div>
- </div>
 </div>
 
 <div id="controls">
@@ -193,16 +176,9 @@ const ctx=canvas.getContext("2d");
 function resize(){
  canvas.width=window.innerWidth;
  canvas.height=window.innerHeight;
- let warningDiv = document.getElementById("rotateWarning");
- if(window.innerHeight > window.innerWidth){
-  warningDiv.style.display = "flex";
- } else {
-  warningDiv.style.display = "none";
- }
 }
 resize();
 window.addEventListener("resize", resize);
-window.addEventListener("orientationchange", resize);
 
 const BIN_ID = "6af5e58eac6210605a82e3d0";
 const MASTER_KEY = "$2a$10$7kUozSyzkNytbUxnN7/kv.xInV14ItUgvNAWdjKEswZ0M.DDWgL/e";
